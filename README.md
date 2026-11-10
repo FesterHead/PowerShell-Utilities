@@ -22,28 +22,42 @@ Note: The scripts enforce PowerShell 7.5 via #Requires -Version 7.5.
 Run from the repository root:
 
 ```pwsh
-## 1. Get the directory path for the profile file
-$profileDirectory = Split-Path -Parent $PROFILE
-
-## 2. Create the directory if it doesn't already exist
-if (-not (Test-Path -Path $profileDirectory)) {
-    Write-Host "Creating required profile directory: $profileDirectory"
-    New-Item -ItemType Directory -Path $profileDirectory -Force | Out-Null
-}
-
-## 3. Set symlink
+## 1. Set target to the repository profile script
 $target = Join-Path (Get-Location) 'Microsoft.PowerShell_profile.ps1'
-if (Test-Path -Path $PROFILE) { Copy-Item -Path $PROFILE -Destination "${PROFILE}.bak" -Force }
-Remove-Item -Path $PROFILE -Force -ErrorAction SilentlyContinue
-New-Item -ItemType SymbolicLink -Path $PROFILE -Target $target
+if (-not (Test-Path -Path $target)) {
+    Write-Error "Target file '$target' does not exist. Ensure you are running this from the repository root directory (e.g. Set-Location 'E:\Projects\PowerShell-Utilities')."
+} else {
+    ## 2. Get profile directories for both PowerShell 7 and Windows PowerShell 5.1 (Android Studio default)
+    $docsDir = [Environment]::GetFolderPath('MyDocuments')
+    $profileDirs = @(
+        (Join-Path $docsDir 'PowerShell'),
+        (Join-Path $docsDir 'WindowsPowerShell')
+    )
 
-# Reload your profile now
-. $PROFILE
+    ## 3. Link profile files for Console, VS Code, Android Studio, and All Hosts
+    foreach ($dir in $profileDirs) {
+        if (-not (Test-Path -Path $dir)) {
+            New-Item -ItemType Directory -Path $dir -Force | Out-Null
+        }
+        $profilesToLink = @(
+            (Join-Path $dir 'Microsoft.PowerShell_profile.ps1'),
+            (Join-Path $dir 'Microsoft.VSCode_profile.ps1'),
+            (Join-Path $dir 'profile.ps1')
+        )
+        foreach ($p in $profilesToLink) {
+            if (Test-Path -Path $p) { Copy-Item -Path $p -Destination "${p}.bak" -Force -ErrorAction SilentlyContinue }
+            Remove-Item -Path $p -Force -ErrorAction SilentlyContinue
+            New-Item -ItemType SymbolicLink -Path $p -Target $target -Force | Out-Null
+        }
+    }
+    . $PROFILE
+}
 ```
 
 Notes:
 
 - Creating symbolic links requires either running PowerShell as Administrator or enabling Developer Mode on Windows.
+- Linking `$PROFILE.CurrentUserAllHosts` (`profile.ps1`) ensures your profile automatically loads across all PowerShell environments including Android Studio, VS Code, Windows Terminal, and standalone consoles.
 - The preferred approach uses `Get-Location` so instructions do not contain any personal full paths (no usernames shown).
 
 To run the winget helper script directly (assumes you are in the repository directory):
