@@ -103,6 +103,9 @@ function cauto {
 function csync {
     git fetch origin
     git checkout main; git pull origin main
+    if (git remote | Select-String -Quiet '^github$') {
+        git push github main
+    }
     git checkout develop; git merge main
     git push origin develop
 }

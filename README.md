@@ -77,8 +77,7 @@ When updating or installing with winget, the helper passes `--accept-package-agr
 
 ## Contributing
 
-- Fork the repository, create a branch, and open a pull request.
-- Update CHANGELOG.md (add a ## [X.Y.Z] section) for any release entries.
+Pull requests are not accepted. Feel free to fork or branch this repository and use or modify it as you see fit in accordance with the license.
 
 ## License
 
